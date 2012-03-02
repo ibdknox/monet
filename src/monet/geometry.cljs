@@ -26,17 +26,17 @@
   ;;Account for circles whose x and y represent the center
   ;;instead of the top left
   (if r
-    {:x (+ x (/ w 2))
-     :y (+ y (/ h 2))}
+    {:x (+ x r)
+     :y (+ y r)}
     {:x (+ x w)
      :y (+ y h)}))
 
-(defn top-left [{:keys [x y w h r]}]
+(defn top-left [{:keys [x y r]}]
   ;;Account for circles whose x and y represent the center
   ;;instead of the top left
   (if r
-    {:x (- x (/ w 2))
-     :y (- y (/ h 2))}
+    {:x (- x r)
+     :y (- y r)}
     {:x x
      :y y}))
 

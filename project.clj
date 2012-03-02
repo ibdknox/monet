@@ -1,3 +1,3 @@
 (defproject monet "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
+  :description "A ClojureScript visual library"
   :dependencies [[clojure "1.3.0"]])

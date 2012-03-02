@@ -43,7 +43,12 @@
   ctx)
 
 (defn text [ctx {:keys [text x y]}]
-  (. ctx (fillText text x y)))
+  (. ctx (fillText text x y))
+  ctx)
+
+(defn font-style [ctx font]
+  (set! ctx.font font)
+  ctx)
 
 (defn fill-style [ctx color]
   (set! ctx.fillStyle color)
@@ -81,64 +86,77 @@
 ;; Canvas Entities
 ;;*********************************************
 
-(def entities (js-obj))
-(def active (atom true))
+(defn add-entity [mc k ent]
+  (aset (:entities mc) k ent))
 
-(defn add-entity [k ent]
-  (aset entities k ent))
+(defn remove-entity [mc k]
+  (js-delete (:entities mc) k))
 
-(defn remove-entity [k]
-  (js-delete entities k))
+(defn get-entity [mc k]
+  (:value (aget (:entities mc) k)))
 
-(defn get-entity [k]
-  (:value (aget entities k)))
-
-(defn update-entity [k func & extra]
-  (let [cur (aget entities k)
+(defn update-entity [mc k func & extra]
+  (let [cur (aget (:entities mc) k)
         res (apply func cur extra)]
-    (aset entities k res)))
+    (aset (:entities mc) k res)))
+
+(defn clear! [mc]
+  (let [ks (js-keys (:entities mc))]
+    (doseq [k ks]
+      (remove-entity mc k))))
 
 (defn entity [v update draw]
   {:value v
    :draw draw
    :update update})
 
-(defn update-loop []
+(defn- attr [e a]
+  (.getAttribute e a))
+
+(defn draw-loop [{:keys [canvas updating? ctx active entities] :as mc}]
+  (clear-rect ctx {:x 0 :y 0 :w (attr canvas "width") :h (attr canvas "height")})
   (when @active
     (let [ks (js-keys entities)
           cnt (alength ks)]
       (loop [i 0]
         (when (< i cnt)
           (let [k (aget ks i)
-                {:keys [update value] :as ent} (aget entities k)]
-            (when update
-              (let [updated (update value)]
+                {:keys [draw update value] :as ent} (aget entities k)]
+            (when (and update @updating?)
+              (let [updated (or (try (update value)
+                                  (catch js/Error e
+                                    (.log js/console e)
+                                    value))
+                                value)]
                 (when (aget entities k)
                   (aset entities k (assoc ent :value updated)))))
-            (recur (inc i)))))
-      (js/setTimeout update-loop 10))))
-
-(defn draw-loop [ctx width height]
-  (clear-rect ctx {:x 0 :y 0 :w width :h height})
-  (when @active
-    (let [ks (js-keys entities)
-          cnt (alength ks)]
-      (loop [i 0]
-        (when (< i cnt)
-          (let [k (aget ks i)
-                {:keys [draw value] :as ent} (aget entities k)]
             (when draw 
-              (draw ctx value)) 
+              (try
+                (draw ctx (:value (aget entities k)))
+                (catch js/Error e
+                  (.log js/console e))))
             (recur (inc i))))))
-    (core/animation-frame #(draw-loop ctx width height))))
+    (core/animation-frame #(draw-loop mc))))
+
+(defn monet-canvas [elem context-type]
+  (let [ct (or context-type "2d")
+        ctx (get-context elem ct)]
+    {:canvas elem
+     :ctx ctx
+     :entities (js-obj)
+     :updating? (atom true)
+     :active (atom true)}))
 
 (defn init [canvas & [context-type]]
-  (let [ct (or context-type "2d")
-        width (.getAttribute canvas "width")
-        height (.getAttribute canvas "height")
-        ctx (get-context canvas ct)]
-    (update-loop)
-    (draw-loop ctx width height)))
+  (let [mc (monet-canvas canvas context-type)]
+    ;;(update-loop mc)
+    (draw-loop mc)
+    mc))
 
-(defn stop [] (reset! active false))
-(defn start [] (reset! active true))
+(defn stop [mc] (reset! (:active mc) false))
+(defn stop-updating [mc] (reset! (:updating? mc) false))
+(defn start-updating [mc] (reset! (:updating? mc) true))
+(defn restart [mc] 
+  (reset! (:active mc) true)
+  (update-loop mc)
+  (draw-loop mc))
