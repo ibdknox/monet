@@ -35,6 +35,10 @@
   (fill ctx)
   ctx)
 
+(defn stroke-rect [ctx {:keys [x y w h]}]
+  (. ctx (strokeRect x y w h))
+  ctx)
+
 (defn circle [ctx {:keys [x y r]}]
   (begin-path ctx)
   (. ctx (arc x y r 0 (* (.-PI js/Math) 2) true))
@@ -81,6 +85,18 @@
 (defn restore [ctx]
   (. ctx (restore))
   ctx)
+
+(defn scale [ctx sx sy]
+  (. ctx (scale sx sy))
+  ctx)
+
+(defn draw-image
+  ([ctx img x y]
+     (. ctx (drawImage img x y))
+     ctx)
+  ([ctx img {:keys [x y w h]}]
+     (. ctx (drawImage img x y w h))
+     ctx))
 
 ;;*********************************************
 ;; Canvas Entities
