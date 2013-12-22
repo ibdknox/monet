@@ -1,13 +1,1 @@
-# monet
-
-I'm an app. I sure don't do much.
-
-## Usage
-
-FIXME
-
-## License
-
-Copyright (C) 2011 FIXME
-
-Distributed under the Eclipse Public License, the same as Clojure.
+#There's a fork of Monet that's much more up to date check it out here: https://github.com/rm-hull/monet
